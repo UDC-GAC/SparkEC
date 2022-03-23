@@ -4,6 +4,7 @@
 
 #GLOBAL
 k = 24
+splitMemoryConstant = 5.25
 
 #PREPROCESS
 inputType = FastQ

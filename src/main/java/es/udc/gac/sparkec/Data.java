@@ -345,16 +345,17 @@ public class Data implements Serializable {
 	 * @param outputPath The output path of the resulting RDD
 	 * @param tmpPath The base path for the phase temporary results
 	 * @param memoryAvailable The memory available for RDD storage purposes, used for split estimation
-	 * @param k The k used by the algorithm, used for split stimation
+	 * @param memoryConstant The constant used for the memory estimation step
+	 * @param k The k used by the algorithm, used for split memory estimation
 	 */
-	public Data(String outputPath, String tmpPath, long memoryAvailable, int k) {
+	public Data(String outputPath, String tmpPath, long memoryAvailable, float memoryConstant, int k) {
 		this.tmpOutput = tmpPath;
 		this.output = outputPath;
 		this.finalOutputSet = false;
 		this.data = new Stack<>();
 		this.startingRDD = null;
 		this.outputRDD = null;
-		this.splitStrategy = new PhaseSplitStrategy(k, memoryAvailable);
+		this.splitStrategy = new PhaseSplitStrategy(k, memoryAvailable, memoryConstant);
 	}
 
 }

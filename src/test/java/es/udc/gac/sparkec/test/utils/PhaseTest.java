@@ -63,7 +63,7 @@ public abstract class PhaseTest extends SharedJavaSparkContext implements Serial
 
 	protected IPhaseSplitStrategy getSplitStrategy() {
 		if (splitStrategy == null) {
-			splitStrategy = new PhaseSplitStrategy(24, 4L * 1024L * 1024L * 1024L);
+			splitStrategy = new PhaseSplitStrategy(24, 4L * 1024L * 1024L * 1024L, 5.25f);
 			splitStrategy.initialize(100, 7000);
 		}
 

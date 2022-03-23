@@ -204,7 +204,7 @@ public class SparkEC {
 
 			long memoryAvailable = determineAvailableMemory();
 
-			data = new Data(outputPath, outputPath + "_tmp", memoryAvailable, config.getK());
+			data = new Data(outputPath, outputPath + "_tmp", memoryAvailable, config.getSplitMemoryConstant(), config.getK());
 			phases = new LinkedList<>();
 
 			phases.add(new PreProcess(config, inputPath));
