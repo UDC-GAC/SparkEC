@@ -42,6 +42,11 @@ public class Config {
 	 * The k being used for this execution.
 	 */
 	private final Integer k = 24;
+	
+	/**
+	 * The C constant parameter used for the memory estimation of the split-based system.
+	 */
+	private final Float splitMemoryConstant = 5.25f;
 
 	// PREPROCESS
 	/**
@@ -261,6 +266,15 @@ public class Config {
 	 */
 	public int getK() {
 		return k;
+	}
+
+	/**
+	 * Gets the constant value used for the memory estimation
+	 * of the split-based system.
+	 * @return The constant value
+	 */
+	public Float getSplitMemoryConstant() {
+		return splitMemoryConstant;
 	}
 
 	/**

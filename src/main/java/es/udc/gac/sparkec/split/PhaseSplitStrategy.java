@@ -18,7 +18,7 @@ public class PhaseSplitStrategy implements IPhaseSplitStrategy {
 	/**
 	 * Internal coefficient to estimate the needed memory for each kmer
 	 */
-	private static final double KMER_MEMORY_COEF = 5.25d;
+	private final float KMER_MEMORY_COEF;
 	
 	/**
 	 * The base number of splits needed to handle each phase that needs to
@@ -95,11 +95,13 @@ public class PhaseSplitStrategy implements IPhaseSplitStrategy {
 	 * Default constructor for this implementation of the PhaseSplitStrategy
 	 * @param k The k being currently used by the algorithm
 	 * @param availableMemory The total available memory for the RDD storage of this execution
+	 * @param memoryConstant The constant used for the estimation of the memory needed for the execution
 	 *  among all the executor nodes.
 	 */
-	public PhaseSplitStrategy(int k, long availableMemory) {
+	public PhaseSplitStrategy(int k, long availableMemory, float memoryConstant) {
 		this.k = k;
 		this.availableMemory = availableMemory;
+		this.KMER_MEMORY_COEF = memoryConstant;
 	}
 
 }
