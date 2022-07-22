@@ -4,6 +4,7 @@ SparkEC is an error correction parallel tool whose goal is to correct DNA Sequen
 
 This project is based on the [CloudEC](https://github.com/CSCLabTW/CloudEC) tool. The underlying Multiple Sequence Alignment (MSA) algorithms provided by CloudEC keep being the same in SparkEC, so their correction accuracy is ensured, but the code architecture has been completely refactored and the Apache Hadoop framework replaced by Spark. Other optimizations provided by SparkEC include the split-based system, the avoidance of preprocessing of the input datasets and the use of more memory-efficient data structures.
 
+
 ## Getting Started
 
 ### Prerequisites
@@ -18,15 +19,16 @@ Download SparkEC and unzip the tarball or, alternatively, clone the GitHub repos
 
 ### Execution
 
-This tool can be executed submitting it as a Spark job using the *spark-submit* command:
+This tool can be executed by submitting it as a Spark job using the *spark-submit* command:
 
-`spark-submit SparkEC.jar -in <input dataset> -out <output directory>`
+`spark-submit target/SparkEC.jar -in <input dataset> -out <output directory>`
+
 
 ## Configuration
 
 SparkEC settings can be set through the *config.properties.template* file provided at the *conf* directory. Check this file to see all the available configuration parameters for this tool. Once the configuration is set, it can be used with the "-config" command-line argument as follows:
 
-`spark-submit SparkEC.jar -in <input dataset> -out <output directory> -config <configuration file>`
+`spark-submit target/SparkEC.jar -in <input dataset> -out <output directory> -config <configuration file>`
 
 It may be also interesting to tune the Spark configuration in order to get the best performance. For instance:
 
@@ -45,7 +47,8 @@ In order to build the project, simply run the required Maven phase. For example:
 
 `mvn package`
 
-The resulting *Jar* file to run SparkEC will be generated at the *target* directory, with the name *SparkEC.jar*. Note that the first time you execute the previous command, Maven will download all the plugins and related dependencies it needs. From a clean installation of Maven, this can take quite a while.
+The resulting *jar* file to run SparkEC will be generated at the *target* directory, with the name *SparkEC.jar*. Note that the first time you execute the previous command, Maven will download all the plugins and related dependencies it needs. From a clean installation of Maven, this can take quite a while.
+
 
 ## Authors
 
@@ -54,6 +57,7 @@ SparkEC is developed in the [Computer Architecture Group](https://gac.udc.es/?pa
 * **Roberto R. Expósito** (https://gac.udc.es/~rober)
 * **Marco Martínez-Sánchez** (https://orcid.org/0000-0003-2444-9112)
 * **Juan Touriño** (http://gac.udc.es/~juan)
+
 
 ## License
 
