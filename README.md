@@ -39,13 +39,13 @@ It may be also interesting to tune the Spark configuration in order to get the b
 The prerequisites to build SparkEC are:
 * Java Develpment Kit (JDK) version 1.8 (or above).
 * Apache Maven version 3 (or above).
-* [Hadoop Sequence Parser](https://github.com/rreye/hsp) to support FASTQ datasets.
+* [Hadoop Sequence Parser](https://github.com/UDC-GAC/hsp) library.
 
 In order to build the project, simply run the required Maven phase. For example:
 
 `mvn package`
 
-The resulting *Jar* file to run SparkEC will be generated at the target directory, with the name SparkEC.jar. Note that the first time you execute the previous command, Maven will download all the plugins and related dependencies it needs. From a clean installation of Maven, this can take quite a while.
+The resulting *Jar* file to run SparkEC will be generated at the *target* directory, with the name *SparkEC.jar*. Note that the first time you execute the previous command, Maven will download all the plugins and related dependencies it needs. From a clean installation of Maven, this can take quite a while.
 
 ## Authors
 
