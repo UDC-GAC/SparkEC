@@ -30,7 +30,7 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<plugins.maven.assembly.version>3.4.1</plugins.maven.assembly.version>
+		<plugins.maven.shade.version>3.3.0</plugins.maven.shade.version>
 		<plugins.maven.jar.version>3.2.2</plugins.maven.jar.version>
 		<plugins.maven.javadoc.version>3.4.0</plugins.maven.javadoc.version>
 		<plugins.maven.surefire.version>3.0.0-M7</plugins.maven.surefire.version>
@@ -40,30 +40,49 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>${plugins.maven.shade.version}</version>
+				<configuration>
+					<createDependencyReducedPom>false</createDependencyReducedPom>
+					<finalName>${project.artifactId}</finalName>
+					<shadedArtifactAttached>false</shadedArtifactAttached>
+					<shadeSourcesContent>true</shadeSourcesContent>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/MANIFEST*</exclude>
+								<exclude>META-INF/DEPENDENCIES*</exclude>
+								<exclude>META-INF/LICENSE*</exclude>
+								<exclude>META-INF/NOTICE*</exclude>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+								<exclude>Log4j*</exclude>
+							</excludes>
+						</filter>
+					</filters>
+					<transformers>
+						<transformer
+							implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+							<mainClass>es.udc.gac.sparkec.SparkEC</mainClass>
+							<manifestEntries>
+								<Multi-Release>true</Multi-Release>
+							</manifestEntries>
+						</transformer>
+						<transformer
+							implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer">
+						</transformer>
+					</transformers>
+				</configuration>
 				<executions>
 					<execution>
 						<phase>package</phase>
 						<goals>
-							<goal>single</goal>
+							<goal>shade</goal>
 						</goals>
 					</execution>
 				</executions>
-				<configuration>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<archive>
-						<manifest>
-							<mainClass>es.udc.gac.sparkec.SparkEC</mainClass>
-						</manifest>
-						<manifestEntries>
-							<Multi-Release>true</Multi-Release>
-						</manifestEntries>
-					</archive>
-					<finalName>SparkEC</finalName>
-					<appendAssemblyId>false</appendAssemblyId>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
