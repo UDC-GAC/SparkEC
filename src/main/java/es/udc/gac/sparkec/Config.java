@@ -20,6 +20,7 @@ import org.apache.spark.api.java.JavaSparkContext;
  */
 public class Config {
 	private static final Logger logger = LogManager.getLogger();
+	public static final String WEBPAGE = "https://github.com/UDC-GAC/SparkEC";
 
 	// FRAMEWORK
 	/**
@@ -52,7 +53,7 @@ public class Config {
 	/**
 	 * The format of the input dataset.
 	 */
-	private String inputType = "internal";
+	private String inputType = "FastQ";
 
 	// PINCH_CORRECT
 	/**
