@@ -47,12 +47,6 @@ In order to build the project, simply run the required Maven phase. For example:
 
 The resulting *Jar* file to run SparkEC will be generated at the target directory, with the name SparkEC.jar. Note that the first time you execute the previous command, Maven will download all the plugins and related dependencies it needs. From a clean installation of Maven, this can take quite a while.
 
-
-## Testing
-This project incorporates several tests, which will run Spark in local mode in order to test the different phases against the outputs of their CloudEC counterparts- To run these tests, simply run the "test" phase of Maven:
-
-`mvn test`
-
 ## Authors
 
 SparkEC is developed in the [Computer Architecture Group](https://gac.udc.es/?page_id=770&lang=en) at the [Universidade da Coruña](https://www.udc.es/en) by:
