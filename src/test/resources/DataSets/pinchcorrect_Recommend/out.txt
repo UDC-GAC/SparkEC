@@ -1,3 +1,0 @@
-SRR765989.548558 HWI-ST142:649:C1LEUACXX:2:1103:15740:1933/2	A	jjjjjjjjjjjjjjjjjjjjjjjjjjjfjjjjjjjjjjjjjjjjjjjjjjd
-SRR765989.1402438 HWI-ST142:649:C1LEUACXX:2:1106:19462:1937/2	A	jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj\jjjjjd
-SRR765989.148 HWI-ST142:649:C1LEUACXX:2:1101:9928:1998/2	A	jjjjjjjjjjjjjjjjGjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjd
