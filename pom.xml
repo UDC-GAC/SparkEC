@@ -9,21 +9,31 @@
 	<artifactId>SparkEC</artifactId>
 	<version>1.0</version>
 
+	<name>SparkEC</name>
+	<url>https://github.com/UDC-GAC/SparkEC</url>
+	<licenses>
+		<license>
+			<name>GNU General Public Licence Version 3</name>
+			<url>https://www.gnu.org/licenses/gpl.txt</url>
+		</license>
+	</licenses>
+
 	<properties>
+		<skipTests>true</skipTests>
 		<dependency.log4j2.version>2.17.1</dependency.log4j2.version>
-		<dependency.spark.version>2.3.1</dependency.spark.version>
+		<dependency.spark.version>2.4.7</dependency.spark.version>
 		<dependency.hamcrest.version>1.3</dependency.hamcrest.version>
 		<dependency.junit.version>4.13.1</dependency.junit.version>
-		<dependency.hsp.version>1.2</dependency.hsp.version>
-		<dependency.junit.quickcheck.version>0.9.1</dependency.junit.quickcheck.version>
-		<dependency.spark.testing.version>2.3.1_0.10.0</dependency.spark.testing.version>
+		<dependency.hsp.version>1.3</dependency.hsp.version>
+		<dependency.junit.quickcheck.version>0.9.5</dependency.junit.quickcheck.version>
+		<dependency.spark.testing.version>2.4.7_1.2.0</dependency.spark.testing.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<plugins.maven.assembly.version>3.2.0</plugins.maven.assembly.version>
-		<plugins.maven.jar.version>3.1.1</plugins.maven.jar.version>
-		<plugins.maven.javadoc.version>3.2.0</plugins.maven.javadoc.version>
-		<plugins.maven.surefire.version>3.0.0-M3</plugins.maven.surefire.version>
+		<plugins.maven.assembly.version>3.4.1</plugins.maven.assembly.version>
+		<plugins.maven.jar.version>3.2.2</plugins.maven.jar.version>
+		<plugins.maven.javadoc.version>3.4.0</plugins.maven.javadoc.version>
+		<plugins.maven.surefire.version>3.0.0-M7</plugins.maven.surefire.version>
 	</properties>
 
 	<build>
@@ -47,6 +57,9 @@
 						<manifest>
 							<mainClass>es.udc.gac.sparkec.SparkEC</mainClass>
 						</manifest>
+						<manifestEntries>
+							<Multi-Release>true</Multi-Release>
+						</manifestEntries>
 					</archive>
 					<finalName>SparkEC</finalName>
 					<appendAssemblyId>false</appendAssemblyId>
@@ -106,7 +119,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.holdenkarau</groupId>
-			<artifactId>spark-testing-base_2.11</artifactId>
+			<artifactId>spark-testing-base_2.12</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -120,7 +133,6 @@
 		<dependency>
 			<groupId>es.udc.gac</groupId>
 			<artifactId>hadoop-sequence-parser</artifactId>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -144,7 +156,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.spark</groupId>
-			<artifactId>spark-core_2.11</artifactId>
+			<artifactId>spark-core_2.12</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -158,7 +170,7 @@
 		<dependencies>
 			<dependency>
 				<groupId>com.holdenkarau</groupId>
-				<artifactId>spark-testing-base_2.11</artifactId>
+				<artifactId>spark-testing-base_2.12</artifactId>
 				<version>${dependency.spark.testing.version}</version>
 				<scope>test</scope>
 			</dependency>
@@ -176,7 +188,6 @@
 				<groupId>es.udc.gac</groupId>
 				<artifactId>hadoop-sequence-parser</artifactId>
 				<version>${dependency.hsp.version}</version>
-				<scope>compile</scope>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
@@ -201,7 +212,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.apache.spark</groupId>
-				<artifactId>spark-core_2.11</artifactId>
+				<artifactId>spark-core_2.12</artifactId>
 				<version>${dependency.spark.version}</version>
 				<scope>provided</scope>
 			</dependency>
@@ -213,7 +224,4 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 </project>
-
-
