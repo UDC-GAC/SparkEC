@@ -28,7 +28,7 @@ import es.udc.gac.sparkec.uniquekmer.UniqueKmerFilter;
  * of all the phases of the system, calling each phase when needed.
  */
 public class SparkEC {
-	
+
 	/**
 	 * Name for the global time measured for this execution.
 	 */
@@ -40,7 +40,7 @@ public class SparkEC {
 	 * List of the phases being run in this execution of SparkEC
 	 */
 	private List<Phase> phases;
-	
+
 	/**
 	 * The Spark Context of the current execution
 	 */
@@ -51,24 +51,24 @@ public class SparkEC {
 	 * for the datasets.
 	 */
 	private Data data;
-	
+
 	/**
 	 * The configuration being currently used in this execution.
 	 */
 	private Config config;
 
 	// Paths
-	
+
 	/**
 	 * The input path being used by the system. It might be HDFS or a local file system path.
 	 */
 	private String inputPath;
-	
+
 	/**
 	 * The output path being used by the system. It must be HDFS.
 	 */
 	private String outputPath;
-	
+
 	/**
 	 * The configuration path being used by the system. It must be a local file system path.
 	 */
@@ -122,13 +122,14 @@ public class SparkEC {
 			}
 		}
 		if (!in || !out) {
-			logger.info("Usage: SparkEC -in <input> -out <output> [-config <config>]\n\n");
+			logger.error("Usage: spark-submit SparkEC.jar -in <input> -out <output> [-config <config>]");
+			logger.info("More information available at: "+Config.WEBPAGE+"\n\n");
 			exit(-1);
 		}
 	}
 
 	/**
-	 * Auxiliary method to determine all the cluster available memory for RDD stortage purposes
+	 * Auxiliary method to determine all the cluster available memory for RDD storage purposes
 	 * @return The number of available memory bytes for RDD storage
 	 */
 	private long determineAvailableMemory() {
@@ -141,10 +142,10 @@ public class SparkEC {
 
 		if (isLocal) {
 			executorCount = 1;
-			memoryString = conf.get("spark.driver.memory").toLowerCase();
+			memoryString = conf.get("spark.driver.memory", "1g").toLowerCase();
 		} else {
 			executorCount = conf.getInt("spark.executor.instances", 1);
-			memoryString = conf.get("spark.executor.memory").toLowerCase();
+			memoryString = conf.get("spark.executor.memory", "1g").toLowerCase();
 		}
 		long executorMemory;
 		switch (memoryString.charAt(memoryString.length() - 1)) {
@@ -164,7 +165,7 @@ public class SparkEC {
 			executorMemory = Long.parseLong(memoryString.substring(0, memoryString.length() - 1));
 			break;
 		}
-		
+
 
 		return executorMemory * executorCount;
 	}
@@ -199,7 +200,8 @@ public class SparkEC {
 				config.readConfig(configPath);
 			}
 
-			String sparkSerializer = jsc.sc().conf().get("spark.serializer");
+			String sparkSerializer = jsc.sc().conf().get("spark.serializer", "org.apache.spark.serializer.JavaSerializer");
+
 			config.setKryoEnabled(sparkSerializer.equals("org.apache.spark.serializer.KryoSerializer"));
 
 			long memoryAvailable = determineAvailableMemory();
@@ -248,7 +250,7 @@ public class SparkEC {
 
 			if (config.isKryoEnabled()) {
 				config.getJavaSparkContext().sc().conf()
-						.registerKryoClasses(new Class[] { Node.class, LazyDNASequence.class, EagerDNASequence.class });
+				.registerKryoClasses(new Class[] { Node.class, LazyDNASequence.class, EagerDNASequence.class });
 			}
 
 			TimeMonitor timeMonitor = new TimeMonitor();
@@ -262,11 +264,11 @@ public class SparkEC {
 					data.getLatestData().count();
 				}
 				timeMonitor.startMeasuring(p.getPhaseName());
-				
+
 				p.runPhase(data);
-				
+
 				logger.info("Phase succesfully computed");
-				
+
 				timeMonitor.finishMeasuring(p.getPhaseName());
 
 			}
@@ -300,7 +302,7 @@ public class SparkEC {
 			}
 			Collections.sort(timesFormatted);
 			timesFormatted.forEach(e -> logger.info(e));
-			
+
 
 		} catch (Exception e) {
 			logger.fatal("Message: " + e.getMessage());
