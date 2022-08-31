@@ -29,10 +29,11 @@ import es.udc.gac.sparkec.uniquekmer.UniqueKmerFilter;
  */
 public class SparkEC {
 
-	/**
-	 * Name for the global time measured for this execution.
-	 */
 	private static final String GLOBAL_MEASURE_NAME = "Global";
+	private static final String OUTPUT_MEASURE_NAME = "Output";
+
+	public static final String WEBPAGE = "https://github.com/UDC-GAC/SparkEC";
+	public static final String VERSION = "v1.0.1";
 
 	private static Logger logger;
 
@@ -123,7 +124,7 @@ public class SparkEC {
 		}
 		if (!in || !out) {
 			logger.error("Usage: spark-submit SparkEC.jar -in <input> -out <output> [-config <config>]");
-			logger.info("More information available at: "+Config.WEBPAGE+"\n\n");
+			logger.info("More information available at: "+WEBPAGE+"\n\n");
 			exit(-1);
 		}
 	}
@@ -237,9 +238,10 @@ public class SparkEC {
 	 */
 	private void run() {
 		try {
-			logger.info(" ");
-			logger.info(" ");
-			logger.info("Starting SparkEC");
+			TimeMonitor timeMonitor = new TimeMonitor();
+			timeMonitor.startMeasuring(SparkEC.GLOBAL_MEASURE_NAME);
+
+			logger.info("Starting SparkEC "+VERSION);
 			logger.info(String.format("Input path: %s", this.inputPath));
 			logger.info(String.format("Output path: %s", this.outputPath));
 			if (this.configPath != null) {
@@ -253,56 +255,53 @@ public class SparkEC {
 				.registerKryoClasses(new Class[] { Node.class, LazyDNASequence.class, EagerDNASequence.class });
 			}
 
-			TimeMonitor timeMonitor = new TimeMonitor();
-
-			timeMonitor.startMeasuring(SparkEC.GLOBAL_MEASURE_NAME);
-
 			for (Phase p : phases) {
-
 				logger.info("Computing phase: " + p.getPhaseName());
-				if (data.getNumElems() > 0) {
-					data.getLatestData().count();
-				}
 				timeMonitor.startMeasuring(p.getPhaseName());
-
 				p.runPhase(data);
-
 				logger.info("Phase succesfully computed");
-
 				timeMonitor.finishMeasuring(p.getPhaseName());
-
 			}
+
+			timeMonitor.startMeasuring(OUTPUT_MEASURE_NAME);
 			data.outputData();
+			timeMonitor.finishMeasuring(OUTPUT_MEASURE_NAME);
 
 			timeMonitor.finishMeasuring(SparkEC.GLOBAL_MEASURE_NAME);
 
 			logger.info(" ");
 			logger.info("SparkEC finished succesfully");
-			logger.info(
-					String.format("Elapsed time: %.4fs", timeMonitor.getMeasurement(SparkEC.GLOBAL_MEASURE_NAME)));
-			logger.info("Showing phase stats: ");
+			logger.info("Phase stats: ");
 			for (Phase p : phases) {
 				logger.info(String.format("\t%s", p.getPhaseName()));
 				p.printStats();
 			}
 
 			logger.info(" ");
-			logger.info("Showing phase times: ");
+			logger.info("Phase times: ");
 
 			Iterator<Map.Entry<String, Float>> it;
 			it = timeMonitor.iterator();
 
 			List<String> timesFormatted = new LinkedList<>();
+			float phasesTotal=0.0f;
 			while (it.hasNext()) {
 				Map.Entry<String, Float> e = it.next();
-				if (e.getKey().equals(SparkEC.GLOBAL_MEASURE_NAME)) {
+				if (e.getKey().equals(SparkEC.GLOBAL_MEASURE_NAME) || e.getKey().equals(SparkEC.OUTPUT_MEASURE_NAME)) {
 					continue;
 				}
+				phasesTotal+=e.getValue();
 				timesFormatted.add("\t" + e.getKey() + ": " + String.format("%.4f", e.getValue()) + "s");
 			}
 			Collections.sort(timesFormatted);
 			timesFormatted.forEach(e -> logger.info(e));
 
+			logger.info(
+					String.format("All phases: %.4fs", phasesTotal));
+			logger.info(
+					String.format("Output data: %.4fs", timeMonitor.getMeasurement(SparkEC.OUTPUT_MEASURE_NAME)));
+			logger.info(
+					String.format("Elapsed execution time: %.4fs", timeMonitor.getMeasurement(SparkEC.GLOBAL_MEASURE_NAME)));
 
 		} catch (Exception e) {
 			logger.fatal("Message: " + e.getMessage());
