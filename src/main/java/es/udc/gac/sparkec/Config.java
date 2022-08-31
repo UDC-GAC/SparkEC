@@ -20,19 +20,18 @@ import org.apache.spark.api.java.JavaSparkContext;
  */
 public class Config {
 	private static final Logger logger = LogManager.getLogger();
-	public static final String WEBPAGE = "https://github.com/UDC-GAC/SparkEC";
 
 	// FRAMEWORK
 	/**
 	 * The JavaSparkContext.
 	 */
 	private final JavaSparkContext jsc;
-	
+
 	/**
 	 * The SparkConf.
 	 */
 	private final SparkConf sc;
-	
+
 	/**
 	 * Reference to the HDFS file system.
 	 */
@@ -43,7 +42,7 @@ public class Config {
 	 * The k being used for this execution.
 	 */
 	private final Integer k = 24;
-	
+
 	/**
 	 * The C constant parameter used for the memory estimation of the split-based system.
 	 */
@@ -55,6 +54,11 @@ public class Config {
 	 */
 	private String inputType = "FastQ";
 
+	/**
+	 * Filter (ignore) reads have N bases from input.
+	 */
+	private final Boolean shaveIgnore = true;
+
 	// PINCH_CORRECT
 	/**
 	 * Number of passes to make for PinchCorrect.
@@ -63,43 +67,43 @@ public class Config {
 
 	// LARGE_KMER_FILTER
 	/**
-	 * Whether the PinchCorrect should be run.
+	 * Whether the PinchCorrect filter should be run.
 	 */
 	private final Boolean filter_P = false;
-	
+
 	/**
-	 * Whether the SpreadCorrect should be run.
+	 * Whether the SpreadCorrect filter should be run.
 	 */
 	private final Boolean filter_S = true;
 
 	// SPREAD_CORRECT
-	
+
 	/**
 	 * Number of passes to make for SpreadCorrect.
 	 */
 	private final Integer numSpreadCorrectAttempts = 1;
-	
+
 	/**
 	 * The arm size to use for SpreadCorrect. Higher numbers lead to higher memory usage, and best
 	 * quality results. Use -1 as a flag to use the higher number possible.
 	 */
 	private final Integer arm = -1; // -1 to use the entire reads as arm
-	
+
 	/**
 	 * The height to use for SpreadCorrect.
 	 */
 	private final Integer height = 0;
-	
+
 	/**
 	 * The arm scheme to run for SpreadCorrect.
 	 */
 	private final String scheme = "";
-	
+
 	/**
 	 * The maximum stack to use for SpreadCorrect.
 	 */
 	private final Integer stackMax = -1; // -1 to disable
-	
+
 	/**
 	 * The minimum stack to use for SpreadCorrect.
 	 */
@@ -107,31 +111,31 @@ public class Config {
 
 	// POSTPROCESS
 	/**
-	 * Whether the merge subphase of postprocess should be run.
+	 * Merge ignored reads from input.
 	 */
-	private final Boolean mergeIgnore = true;
+	private final Boolean mergeIgnore = false;
 
 	// OUTPUT TEMPORAL STAGES
 	/**
 	 * Whether to output the PreProcess result as a temporary result.
 	 */
 	private final Boolean outputPreprocess = false;
-	
+
 	/**
 	 * Whether to output the PinchCorrect result as a temporary result.
 	 */
 	private final Boolean outputPinchCorrect = false;
-	
+
 	/**
 	 * Whether to output the LargeKmerFilter result as a temporary result.
 	 */
 	private final Boolean outputLargeKmerFilter = false;
-	
+
 	/**
 	 * Whether to output the SpreadCorrect result as a temporary result.
 	 */
 	private final Boolean outputSpreadCorrect = false;
-	
+
 	/**
 	 * Whether to output the UniqueKmerFilter result as a temporary result.
 	 */
@@ -142,24 +146,24 @@ public class Config {
 	 * Whether to enable the PinchCorrect phase.
 	 */
 	private final Boolean enablePinchCorrect = true;
-	
+
 	/**
 	 * Whether to enable the LargeKmerFilter phase.
 	 */
 	private final Boolean enableLargeKmerFilter = true;
-	
+
 	/**
 	 * Whether to enable the SpreadCorrect phase.
 	 */
 	private final Boolean enableSpreadCorrect = true;
-	
+
 	/**
 	 * Whether to enable the UniqueKmerFilter phase.
 	 */
 	private final Boolean enableUniqueKmerFilter = true;
 
 	// KRYO_ENABLED
-	
+
 	/**
 	 * Whether the Kryo serialization library is being used.
 	 */
@@ -188,7 +192,7 @@ public class Config {
 	public boolean isEnableSpreadCorrect() {
 		return enableSpreadCorrect;
 	}
-	
+
 	/**
 	 * Returns whether the UniqueKmerFilter phase is enabled.
 	 * @return Whether the UniqueKmerFilter phase is enabled
@@ -359,11 +363,19 @@ public class Config {
 	}
 
 	/**
-	 * Gets whether the merge subphase of PostProcess should be ignored.
-	 * @return Whether the merge subphase of PostProcess should be ignored
+	 * Gets mergeIgnore.
+	 * @return Whether to merge ignored reads from input
 	 */
 	public boolean getMergeIgnore() {
 		return mergeIgnore;
+	}
+
+	/**
+	 * Gets shaveIgnore.
+	 * @return Whether to filter (ignore) reads have N bases from input
+	 */
+	public boolean getShaveIgnore() {
+		return shaveIgnore;
 	}
 
 	/**

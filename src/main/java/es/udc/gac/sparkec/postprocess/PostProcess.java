@@ -24,23 +24,27 @@ public class PostProcess implements Phase {
 	 * The first task of PostProcess.
 	 */
 	private final Merge task1;
-	
+
 	/**
 	 * The second task of PostProcess.
 	 */
 	private final Convert task2;
 
 	/**
-	 * Whether the Merge task should be ignored.
+	 * Merge ignored reads from input. If false, task1 is not executed.
 	 */
-	private final boolean mergeIgnore;
+	private boolean mergeIgnore;
 
 	/**
 	 * Default constructor for PostProcess.
 	 * @param c The Config for this execution.
 	 */
 	public PostProcess(Config c) {
-		mergeIgnore = c.getMergeIgnore();
+		mergeIgnore = false;
+
+		if (c.getShaveIgnore())
+			mergeIgnore = c.getMergeIgnore();
+
 		this.task1 = new Merge(c.getJavaSparkContext());
 		this.task2 = new Convert(c.getJavaSparkContext());
 	}
