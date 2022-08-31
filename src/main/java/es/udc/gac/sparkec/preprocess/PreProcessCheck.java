@@ -19,31 +19,38 @@ public class PreProcessCheck implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	private static final int LONG_READ_THRESHOLD = 250;
+	
 	/**
 	 * The k being used by this execution.
 	 */
 	private final int k;
-	
+
 	/**
 	 * Whether the PinchCorrect check must be performed.
 	 */
 	private final boolean PINCHCORRECT;
-	
+
 	/**
 	 * Whether the FilterReads check must be performed.
 	 */
 	private final boolean FILTERREADS;
-	
+
 	/**
 	 * The ReadsSkipped accumulator.
 	 */
 	private final LongAccumulator reads_skipped;
-	
+
+	/**
+	 * The ReadsLong accumulator.
+	 */
+	private final LongAccumulator reads_long;
+
 	/**
 	 * The ReadsPoly accumulator.
 	 */
 	private final LongAccumulator reads_poly;
-	
+
 	/**
 	 * The ReadsGood accumulator.
 	 */
@@ -61,6 +68,7 @@ public class PreProcessCheck implements Serializable {
 		this.PINCHCORRECT = PINCHCORRECT;
 		this.FILTERREADS = FILTERREADS;
 		this.reads_skipped = jsc.sc().longAccumulator();
+		this.reads_long = jsc.sc().longAccumulator();
 		this.reads_poly = jsc.sc().longAccumulator();
 		this.reads_good = jsc.sc().longAccumulator();
 	}
@@ -71,6 +79,14 @@ public class PreProcessCheck implements Serializable {
 	 */
 	public long getReads_skipped() {
 		return reads_skipped.sum();
+	}
+
+	/**
+	 * Returns the total value of the ReadsLong accumulator.
+	 * @return The total value of the ReadsLong accumulator
+	 */
+	public long getReads_long() {
+		return reads_long.sum();
 	}
 
 	/**
@@ -102,6 +118,8 @@ public class PreProcessCheck implements Serializable {
 	 * @param node              The node to check
 	 * @param readsSkipped      Accumulator to report back the number of reads that
 	 *                          had an invalid format
+	 * @param readsLong         Accumulator to report back the number of reads that
+	 *                          had a length longer than 
 	 * @param readsPoly         Accumulator to report back the number of reads that
 	 *                          were filtered because they had too much bases of 'N'
 	 *                          or 'A'
@@ -112,14 +130,20 @@ public class PreProcessCheck implements Serializable {
 	 * @param filterReadsCheck  If an strict base check should be performed
 	 * @return Whether the base was valid
 	 */
-	public static boolean isValid(Tuple2<String, Node> node, LongAccumulator readsSkipped, LongAccumulator readsPoly,
-			LongAccumulator readsGood, int k, boolean pinchCorrectCheck, boolean filterReadsCheck) {
+	public static boolean isValid(Tuple2<String, Node> node, LongAccumulator readsSkipped, LongAccumulator readsLong, 
+			LongAccumulator readsPoly, LongAccumulator readsGood, int k, boolean pinchCorrectCheck, boolean filterReadsCheck) {
 
 		IDNASequence seq = node._2.getSeq();
-		String seqS = new String(seq.toByteArray());
-		byte[] qv = node._2.getQv();
 
-		if (seq.length() != qv.length) {
+		if (seq.length() >= LONG_READ_THRESHOLD)
+			readsLong.add(1);
+
+		if (seq.length() >= Short.MAX_VALUE) {
+			readsSkipped.add(1);
+			return false;
+		}
+		
+		if (seq.length() != node._2.getQv().length) {
 			readsSkipped.add(1);
 			return false;
 		}
@@ -130,6 +154,7 @@ public class PreProcessCheck implements Serializable {
 		}
 
 		if (filterReadsCheck) {
+			String seqS = new String(seq.toByteArray());
 			if (seqS.matches(".*[^ACGT].*")) {
 				readsSkipped.add(1);
 				return false;
@@ -171,17 +196,17 @@ public class PreProcessCheck implements Serializable {
 
 		JavaPairRDD<String, Node> filteredData;
 		filteredData = data
-				.filter(node -> isValid(node, reads_skipped, reads_poly, reads_good, k, PINCHCORRECT, FILTERREADS));
+				.filter(node -> isValid(node, reads_skipped, reads_long, reads_poly, reads_good, k, PINCHCORRECT, FILTERREADS));
 
 		JavaPairRDD<String, Node> formattedData;
 		formattedData = filteredData.mapToPair(PreProcessCheck::qvInputConvert);
-		
+
 		JavaPairRDD<Tuple2<String, Node>, Long> zipped;
 		zipped = formattedData.zipWithUniqueId();
-		
+
 		JavaPairRDD<Long, String> mappings;
 		mappings = zipped.mapToPair(e -> new Tuple2<>(e._2, e._1._1));
-		
+
 		JavaPairRDD<Long, Node> resultingNodes;
 		resultingNodes = zipped.mapToPair(e -> new Tuple2<>(e._2, e._1._2));
 
