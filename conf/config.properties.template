@@ -7,7 +7,7 @@ splitMemoryConstant = 5.25
 #PREPROCESS
 inputType = FastQ
 #Allowed: "internal", "FastQ", "FastA"
-
+shaveIgnore = true
 
 #PINCH_CORRECT
 numPinchCorrectAttempts = 1
@@ -29,12 +29,12 @@ stackMin = 5
 #Use value bigger than 0 to override number of splits
 
 #POSTPROCESS
-mergeIgnore = true
+mergeIgnore = false
 
 #OUTPUT TEMPORAL STAGES
-outputPreprocess = true
-outputPinchCorrect = true
-outputLargeKmerFilter = true
+outputPreprocess = false
+outputPinchCorrect = false
+outputLargeKmerFilter = false
 outputSpreadCorrect = false
 outputUniqueKmerFilter = false
 
