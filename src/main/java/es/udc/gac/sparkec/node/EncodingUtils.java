@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 /**
- * This class is based off Utils from CloudEC. It contains many static utility methods
+ * This class is based on Utils from CloudEC. It contains many static utility methods
  * to help encoding, decoding, and operating over Sequences, Qualities and
  * nodes. Also, it holds the constants needed to operate with the original
  * CloudEC Nodes format.
