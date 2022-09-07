@@ -340,6 +340,17 @@ public class Node implements Serializable {
 		return new Tuple2<>(parts[0], node);
 	}
 
+	public static Tuple2<String, Node> fromSFQString(String[] nodeMsg) throws InvalidNodeFormatException {
+		if (nodeMsg.length != 4) {
+			throw new InvalidNodeFormatException();
+		}
+
+		Node node = new Node();
+		node.setSeq(new EagerDNASequence(nodeMsg[1].getBytes()));
+		node.setQv(nodeMsg[3].getBytes());
+		return new Tuple2<>(nodeMsg[0].substring(1), node);
+	}
+
 	/**
 	 * Parses a Node encoded in the internal CloudEC String message format
 	 * @param nodeMsg The Node encoded in CloudEC String message format
