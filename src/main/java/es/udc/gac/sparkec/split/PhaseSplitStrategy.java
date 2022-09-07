@@ -9,28 +9,28 @@ import org.apache.logging.log4j.Logger;
  * 
  */
 public class PhaseSplitStrategy implements IPhaseSplitStrategy {
-	
+
 
 	private static final long serialVersionUID = 1L;
 
 	private static Logger logger = LogManager.getLogger();
-	
+
 	/**
 	 * Internal coefficient to estimate the needed memory for each kmer
 	 */
 	private final float KMER_MEMORY_COEF;
-	
+
 	/**
 	 * The base number of splits needed to handle each phase that needs to
 	 * emmit kmers
 	 */
 	private double baseSplits = -1;
-	
+
 	/**
 	 * The k currently used by the correction algorithm
 	 */
 	private final int k;
-	
+
 	/**
 	 * The sum of total available memory for storage purposes among all
 	 * Spark executors
@@ -57,7 +57,7 @@ public class PhaseSplitStrategy implements IPhaseSplitStrategy {
 			logger.warn("Consider increasing the number of partitions. This attempt will probably generate empty Spark tasks.");
 			return 1;
 		}
-		
+
 		for (int i = baseCuts; i < (partitions / 10); i++) {
 			if ((partitions % i) != 0) {
 				return i;
@@ -68,29 +68,29 @@ public class PhaseSplitStrategy implements IPhaseSplitStrategy {
 				"Either repartition the initial dataset or lower your required number of cuts. This execution will generate empty Spark tasks!");
 		return baseCuts;
 	}
-	
-	
+
+
 	@Override
 	public int getSplits(int splitsMultiplier) {
 		if (this.baseSplits == -1) {
 			throw new UninitializedPhaseSplitStrategyException();
 		}
-		
+
 		int splits = (int)Math.ceil(this.baseSplits * splitsMultiplier);
 		if (splits < 1) {
 			return 1;
 		}
 		return splits;
 	}
-	
-	
+
 	@Override
 	public void initialize(int seqLen, long nodeCount) {
 		double baseKmerMemory = ((seqLen - k) * k) * nodeCount * KMER_MEMORY_COEF;
-		
 		this.baseSplits = baseKmerMemory / availableMemory;
+		logger.info("baseKmerMemory = "+(long)baseKmerMemory);
+		logger.info("baseSplits = "+baseSplits);
 	}
-	
+
 	/**
 	 * Default constructor for this implementation of the PhaseSplitStrategy
 	 * @param k The k being currently used by the algorithm
@@ -103,5 +103,4 @@ public class PhaseSplitStrategy implements IPhaseSplitStrategy {
 		this.availableMemory = availableMemory;
 		this.KMER_MEMORY_COEF = memoryConstant;
 	}
-
 }

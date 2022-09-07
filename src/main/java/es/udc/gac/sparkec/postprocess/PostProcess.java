@@ -3,6 +3,7 @@ package es.udc.gac.sparkec.postprocess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 
 import es.udc.gac.sparkec.Config;
 import es.udc.gac.sparkec.Data;
@@ -51,14 +52,14 @@ public class PostProcess implements Phase {
 
 	@Override
 	public void runPhase(Data data) {
-		JavaPairRDD<Long, Node> in;
-		in = data.getLatestData();
-		JavaPairRDD<Long, String> mappingJavaPairRDD = data.getMapping();
+		JavaPairRDD<Long, Node> in = data.getLatestData();
 		if (mergeIgnore) {
 			in = task1.run(in, data.getStartingRDD());
 		}
 
-		data.setOutputRDD(task2.run(in, mappingJavaPairRDD));
+		JavaRDD<String> out = task2.run(in, data.getMapping());
+		data.addTmpData(phaseName, null);
+		data.setOutputRDD(out);
 	}
 
 	@Override
@@ -76,7 +77,5 @@ public class PostProcess implements Phase {
 
 		logger.info(String.format("\t\t%d uniqueReads", task2.getUniqueReads()));
 		logger.info(String.format("\t\t%d outputReads", task2.getOutputReads()));
-
 	}
-
 }
