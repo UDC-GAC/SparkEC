@@ -6,11 +6,9 @@ import java.util.Stack;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.spark.HashPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.storage.StorageLevel;
-import org.apache.spark.util.SizeEstimator;
 
 import es.udc.gac.sparkec.node.Node;
 import es.udc.gac.sparkec.split.IPhaseSplitStrategy;
@@ -31,17 +29,17 @@ class PhaseData<R, S> implements Serializable {
 	 * The RDD reference.
 	 */
 	private final JavaPairRDD<R, S> data;
-	
+
 	/**
 	 * Whether this RDD should be output to disk as an intermediate result.
 	 */
 	private final boolean outputToDisk;
-	
+
 	/**
 	 * The name of the phase that generated this RDD.
 	 */
 	private final String phaseName;
-	
+
 	/**
 	 * The path where this RDD should be output, if needed.
 	 */
@@ -69,7 +67,7 @@ class PhaseData<R, S> implements Serializable {
 		this.data = data;
 		this.outputToDisk = false;
 		this.phaseName = phaseName;
-		this.outputPath = "";
+		this.outputPath = null;
 	}
 
 	/**
@@ -123,17 +121,16 @@ public class Data implements Serializable {
 	private static final Logger logger = LogManager.getLogger();
 
 	private static final int SIZE_ESTIMATION_SAMPLE_COUNT = 10;
-	private static final int MAXIMUM_PARTITION_SIZE = 1024 * 1024; // 1 MB
 
 	/**
 	 * Stack containing the RDD references for each phase.
 	 */
 	private Stack<PhaseData<Long, Node>> data;
-	
+
 	/**
 	 * The first RDD read by the system.
 	 */
-	private PhaseData<Long, Node> startingRDD;
+	private PhaseData<Long, Node> inputRDD;
 
 	/**
 	 * The mappings of the internal numeric IDs being used, with the String IDs
@@ -151,7 +148,7 @@ public class Data implements Serializable {
 	 * output to HDFS.
 	 */
 	private final String tmpOutput;
-	
+
 	/**
 	 * The output path for the final SparkEC result.
 	 */
@@ -167,6 +164,11 @@ public class Data implements Serializable {
 	 * stats about the first dataset read by SparkEC.
 	 */
 	private IPhaseSplitStrategy splitStrategy;
+
+	/**
+	 * The configuration being currently used in this execution.
+	 */
+	private Config config;
 
 	/**
 	 * Returns the latest stored data into this container.
@@ -197,7 +199,9 @@ public class Data implements Serializable {
 	 * @param mapping The ID RDD mapping
 	 */
 	public void setMapping(JavaPairRDD<Long, String> mapping) {
-		this.idMapping = mapping;
+		idMapping = mapping;
+		idMapping.persist(StorageLevel.MEMORY_ONLY_SER());
+		idMapping.count();
 	}
 
 	/**
@@ -218,7 +222,7 @@ public class Data implements Serializable {
 			}
 		}
 
-		if (finalOutputSet) {
+		if (finalOutputSet && outputRDD != null) {
 			outputRDD.saveAsTextFile(output);
 		}
 	}
@@ -229,7 +233,7 @@ public class Data implements Serializable {
 	 * @param data The dataset
 	 */
 	public void addTmpData(String phaseName, JavaPairRDD<Long, Node> data) {
-		this.insertData(phaseName, data, "");
+		this.insertData(phaseName, data, null);
 	}
 
 	/**
@@ -240,29 +244,7 @@ public class Data implements Serializable {
 	 * path.
 	 */
 	public void addOutputData(String phaseName, JavaPairRDD<Long, Node> data, String outputPath) {
-
 		this.insertData(phaseName, data, outputPath);
-	}
-
-	/**
-	 * Estimates the number of bytes used by a node RDD
-	 * 
-	 * @param rdd The node RDD
-	 * @return The estimated size
-	 */
-	private double estimateSize(JavaPairRDD<Long, Node> rdd) {
-
-		List<Tuple2<Long, Node>> sample = rdd.takeSample(true, SIZE_ESTIMATION_SAMPLE_COUNT);
-
-		double estimated = 0L;
-		for (int i = 0; i < sample.size(); i++) {
-			estimated += SizeEstimator.estimate(sample.get(i));
-		}
-		estimated /= sample.size();
-
-		estimated *= rdd.count();
-
-		return estimated;
 	}
 
 	/**
@@ -270,7 +252,25 @@ public class Data implements Serializable {
 	 * @param data The RDD to use to estimate the split strategy being used
 	 */
 	private void initializeSplitStrategy(JavaPairRDD<Long, Node> data) {
-		this.splitStrategy.initialize(data.takeSample(true, 1).get(0)._2.getSeq().length(), data.count());
+		int seqLen = config.getSeqLen();
+		long count = config.getNumSeq();
+
+		if (config.getSeqLen() <= 0) {
+			List<Tuple2<Long, Node>> sample = data.takeSample(true, SIZE_ESTIMATION_SAMPLE_COUNT);
+			seqLen = 0;
+			for (int i = 0; i < sample.size(); i++) {
+				seqLen += sample.get(i)._2.getSeq().length();
+			}
+			if (seqLen > 0)
+				seqLen /= sample.size();
+		}
+
+		if (config.getNumSeq() <= 0)
+			count = data.count();
+
+		logger.info("seqLen = "+seqLen);
+		logger.info("numSeq = "+count);
+		this.splitStrategy.initialize(seqLen, count);
 	}
 
 	/**
@@ -281,46 +281,38 @@ public class Data implements Serializable {
 	 */
 	private void insertData(String phaseName, JavaPairRDD<Long, Node> data, String outputPath) {
 
-		if (this.data.isEmpty()) {
-			data = data.partitionBy(new HashPartitioner(data.getNumPartitions()));
-
-			double size = estimateSize(data);
-
-			double partitionSize = size / data.getNumPartitions();
-
-			if (partitionSize > MAXIMUM_PARTITION_SIZE) {
-				logger.warn("The partition size is too high for this dataset! It is recommended to keep it under 1MB.");
-				logger.warn("The detected partition size was: " + partitionSize + ".");
-			}
-
+		if (this.data.isEmpty())
 			this.initializeSplitStrategy(data);
 
+		if (data != null) {
+			data.persist(StorageLevel.MEMORY_ONLY_SER()).setName(phaseName);
+			data.count();
 		}
 
-		data = data.persist(StorageLevel.MEMORY_ONLY()).setName(phaseName);
-		data.count();
-		PhaseData<Long, Node> d = new PhaseData<>(phaseName, data, outputPath);
+		PhaseData<Long, Node> pd;
+		if (outputPath != null)
+			pd = new PhaseData<>(phaseName, data, outputPath);
+		else
+			pd = new PhaseData<>(phaseName, data);
 
 		if (this.data.isEmpty()) {
-			this.startingRDD = d;
+			this.inputRDD = pd;
+		} else {
+			if (this.data.peek().getOutputPath() == null) {
+				// If there is no plan to output this phase result, remove its reference
+				PhaseData<Long, Node> d = this.data.pop();
+				d.getData().unpersist(false);
+			}
 		}
-
-		if ((!this.data.isEmpty()) && (this.data.peek().getOutputPath().equals(""))) {
-			// If there is no plan to output this phase result, remove its reference
-
-			PhaseData<Long, Node> pd = this.data.pop();
-			pd.getData().unpersist(false);
-
-		}
-		this.data.push(d);
+		this.data.push(pd);
 	}
-	
+
 	/**
 	 * Returns the first RDD read by the system.
 	 * @return The first RDD read by the system
 	 */
 	public JavaPairRDD<Long, Node> getStartingRDD() {
-		return this.startingRDD.getData();
+		return this.inputRDD.getData();
 	}
 
 	/**
@@ -342,20 +334,20 @@ public class Data implements Serializable {
 
 	/**
 	 * Default constructor for the Data RDD container.
+	 * @param config The configuration used by this execution
 	 * @param outputPath The output path of the resulting RDD
 	 * @param tmpPath The base path for the phase temporary results
 	 * @param memoryAvailable The memory available for RDD storage purposes, used for split estimation
-	 * @param memoryConstant The constant used for the memory estimation step
-	 * @param k The k used by the algorithm, used for split memory estimation
 	 */
-	public Data(String outputPath, String tmpPath, long memoryAvailable, float memoryConstant, int k) {
+	public Data(Config config, String outputPath, String tmpPath, long memoryAvailable) {
 		this.tmpOutput = tmpPath;
 		this.output = outputPath;
 		this.finalOutputSet = false;
 		this.data = new Stack<>();
-		this.startingRDD = null;
+		this.inputRDD = null;
 		this.outputRDD = null;
-		this.splitStrategy = new PhaseSplitStrategy(k, memoryAvailable, memoryConstant);
+		this.config = config;
+		this.splitStrategy = new PhaseSplitStrategy(config.getK(), memoryAvailable, config.getSplitMemoryConstant());
 	}
 
 }
