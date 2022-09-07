@@ -11,6 +11,7 @@ import org.apache.spark.util.LongAccumulator;
 
 import es.udc.gac.hadoop.sequence.parser.mapreduce.FastAInputFormat;
 import es.udc.gac.hadoop.sequence.parser.mapreduce.FastQInputFormat;
+import es.udc.gac.hadoop.sequence.parser.mapreduce.SingleEndSequenceRecordReader;
 import es.udc.gac.sparkec.node.Node;
 
 /**
@@ -19,14 +20,13 @@ import es.udc.gac.sparkec.node.Node;
  */
 class PreProcessWorker implements Serializable {
 
-
 	private static final long serialVersionUID = 1L;
-	
+
 	/**
 	 * Total accumulator.
 	 */
 	private LongAccumulator totals;
-	
+
 	/**
 	 * Invalid accumulator.
 	 */
@@ -51,11 +51,7 @@ class PreProcessWorker implements Serializable {
 	JavaPairRDD<String, Node> run(JavaPairRDD<LongWritable, Text> input) {
 
 		return input.mapToPair(e -> {
-			String ori = e._2.toString().replace("\r", "");
-			String[] lines = ori.split("\n");
-
-			String msg = lines[0].substring(1) + "\t" + lines[1] + "\t" + lines[3];
-			return Node.fromSFQString(msg);
+			return Node.fromSFQString(SingleEndSequenceRecordReader.getRead(e._2).split("\n"));
 		});
 	}
 
@@ -88,7 +84,6 @@ class PreProcessWorker implements Serializable {
 	public void clearInvalids() {
 		this.totals.setValue(0L);
 	}
-
 }
 
 /**
@@ -125,9 +120,7 @@ public class PreProcessTransform implements Serializable {
 			LongAccumulator invalids) {
 		this.inputType = inputType;
 		this.jsc = jsc;
-
 		this.worker = new PreProcessWorker(totals, invalids);
-
 	}
 
 	/**
@@ -157,9 +150,8 @@ public class PreProcessTransform implements Serializable {
 		input = this.jsc.newAPIHadoopFile(path, parser, LongWritable.class, Text.class, this.jsc.hadoopConfiguration());
 
 		return this.worker.run(input);
-
 	}
-	
+
 	/**
 	 * Returns the total value of the total accumulator.
 	 * @return The total value of the total accumulator

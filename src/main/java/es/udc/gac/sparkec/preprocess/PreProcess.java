@@ -2,7 +2,6 @@ package es.udc.gac.sparkec.preprocess;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.spark.HashPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 
 import es.udc.gac.sparkec.Config;
@@ -15,6 +14,7 @@ import scala.Tuple2;
  * This Phase will read the input dataset, and filter the invalid reads.
  */
 public class PreProcess implements Phase {
+
 	private static Logger logger = LogManager.getLogger();
 
 	/**
@@ -49,17 +49,18 @@ public class PreProcess implements Phase {
 		JavaPairRDD<String, Node> raw;
 		raw = task1.run(inputPath);
 
-		raw.partitionBy(new HashPartitioner(raw.getNumPartitions()));
-
 		Tuple2<JavaPairRDD<Long, String>, JavaPairRDD<Long, Node>> processed;
 		processed = this.task2.run(raw);
+
+		data.setMapping(processed._1);
+
 		if (output)
 			data.addOutputData(phaseName, processed._2, phaseName);
 		else
 			data.addTmpData(phaseName, processed._2);
 
-		data.setMapping(processed._1);
-
+		if (task2.getReads_good() == 0)
+			throw new RuntimeException("No good reads");
 	}
 
 	@Override
@@ -84,7 +85,7 @@ public class PreProcess implements Phase {
 	 */
 	public PreProcess(Config config, String inputPath) {
 
-		output = config.isOutputPreprocess();
+		this.output = config.isOutputPreprocess();
 		this.inputPath = inputPath;
 
 		this.task1 = new PreProcessTransform(config.getInputType(), config.getJavaSparkContext(),
@@ -93,5 +94,4 @@ public class PreProcess implements Phase {
 
 		this.task2 = new PreProcessCheck(config.getK(), config.isEnablePinchCorrect(), config.getShaveIgnore(), config.getJavaSparkContext());
 	}
-
 }

@@ -19,8 +19,8 @@ public class PreProcessCheck implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final int LONG_READ_THRESHOLD = 250;
-	
+	private static final int LONG_READ_THRESHOLD = 1000;
+
 	/**
 	 * The k being used by this execution.
 	 */
@@ -142,7 +142,7 @@ public class PreProcessCheck implements Serializable {
 			readsSkipped.add(1);
 			return false;
 		}
-		
+
 		if (seq.length() != node._2.getQv().length) {
 			readsSkipped.add(1);
 			return false;
@@ -164,7 +164,6 @@ public class PreProcessCheck implements Serializable {
 				readsPoly.add(1);
 				return false;
 			}
-
 		}
 
 		if (seq.isPoly((byte)'A')) {
@@ -212,5 +211,4 @@ public class PreProcessCheck implements Serializable {
 
 		return new Tuple2<JavaPairRDD<Long, String>, JavaPairRDD<Long, Node>>(mappings, resultingNodes);
 	}
-
 }
