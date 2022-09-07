@@ -91,7 +91,10 @@ public class Merge implements Serializable {
 			Node out = null;
 			while (it.hasNext()) {
 				nodeCount++;
-				out = it.next();
+				if (nodeCount == 1)
+					out = it.next();
+				else
+					it.next();
 			}
 
 			if (nodeCount == 1) {
@@ -108,6 +111,5 @@ public class Merge implements Serializable {
 		}).filter(Objects::nonNull);
 
 		return output;
-
 	}
 }
