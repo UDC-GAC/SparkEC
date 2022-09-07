@@ -8,6 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.hdfs.DFSConfigKeys;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.SparkConf;
@@ -29,11 +31,11 @@ import es.udc.gac.sparkec.uniquekmer.UniqueKmerFilter;
  */
 public class SparkEC {
 
+	private static final String WEBPAGE = "https://github.com/UDC-GAC/SparkEC";
+	private static final String VERSION = "v1.1";
+	private static final long ONE_MiB = 1024 * 1024; // 1 MiB
 	private static final String GLOBAL_MEASURE_NAME = "Global";
 	private static final String OUTPUT_MEASURE_NAME = "Output";
-
-	public static final String WEBPAGE = "https://github.com/UDC-GAC/SparkEC";
-	public static final String VERSION = "v1.0.1";
 
 	private static Logger logger;
 
@@ -136,8 +138,20 @@ public class SparkEC {
 	private long determineAvailableMemory() {
 		SparkConf conf = jsc.sc().conf();
 
-		boolean isLocal = conf.get("spark.master").startsWith("local");
+		double memoryOverhead = conf.getDouble("spark.executor.memoryOverhead", 0.1);
+		/*
+		 * Fraction of (heap space - memoryOverhead) used for execution and storage. The lower this 
+		 * is, the more frequently spills and cached data eviction occur.
+		 */
+		double memoryFraction = conf.getDouble("spark.memory.fraction", 0.6);
+		/*
+		 * Amount of storage memory immune to eviction, expressed as a fraction of the size of 
+		 * the region set aside by spark.memory.fraction. The higher this is, the less working 
+		 * memory may be available to execution and tasks may spill to disk more often
+		 */
+		double storageFraction= conf.getDouble("spark.memory.storageFraction", 0.5);
 
+		boolean isLocal = conf.get("spark.master").startsWith("local");
 		String memoryString;
 		int executorCount;
 
@@ -148,6 +162,7 @@ public class SparkEC {
 			executorCount = conf.getInt("spark.executor.instances", 1);
 			memoryString = conf.get("spark.executor.memory", "1g").toLowerCase();
 		}
+
 		long executorMemory;
 		switch (memoryString.charAt(memoryString.length() - 1)) {
 		case 'k':
@@ -167,8 +182,19 @@ public class SparkEC {
 			break;
 		}
 
+		logger.info("spark.memory.fraction = "+memoryFraction);
+		logger.debug("spark.memory.storageFraction = "+storageFraction);
+		logger.debug("spark.executor.memoryOverhead = "+memoryOverhead);
+		logger.info("spark.executor.memory = "+executorMemory);
+		logger.info("spark.executor.instances = "+executorCount);
+		double memory = (executorMemory - (executorMemory * memoryOverhead)) * memoryFraction;
+		long availableExecutorMemory = (long) Math.floor(memory);
+		logger.debug("execution memory = "+(long) Math.floor(availableExecutorMemory * (1 - storageFraction)));
+		logger.debug("storage memory = "+(long) Math.floor(availableExecutorMemory * storageFraction));
+		logger.info("execution/storage memory = "+availableExecutorMemory);
+		logger.info("availableMemory = "+availableExecutorMemory * executorCount);
 
-		return executorMemory * executorCount;
+		return availableExecutorMemory * executorCount;
 	}
 
 	/**
@@ -177,15 +203,20 @@ public class SparkEC {
 	 */
 	private SparkEC(String[] args) {
 		try {
-
 			parseArgs(args);
 
 			this.config = new Config();
 			this.jsc = config.getJavaSparkContext();
-			jsc.setLogLevel("WARN");
+
+			logger.info("Starting SparkEC "+VERSION);
+			logger.info(String.format("Input path: %s", this.inputPath));
+			logger.info(String.format("Output path: %s", this.outputPath));
+			if (this.configPath != null) {
+				logger.info(String.format("Config path: %s", this.configPath));
+			}
 
 			if (!config.HDFSFileExists(inputPath)) {
-				logger.error("Invalid input path");
+				logger.error("Invalid input path: "+inputPath);
 				exit(-1);
 			}
 
@@ -201,13 +232,21 @@ public class SparkEC {
 				config.readConfig(configPath);
 			}
 
+			jsc.setLogLevel(config.getSparkLogLevel());
 			String sparkSerializer = jsc.sc().conf().get("spark.serializer", "org.apache.spark.serializer.JavaSerializer");
 
 			config.setKryoEnabled(sparkSerializer.equals("org.apache.spark.serializer.KryoSerializer"));
 
-			long memoryAvailable = determineAvailableMemory();
+			/*
+			 * Set Hadoop configuration
+			 */
+			org.apache.hadoop.conf.Configuration hadoopConfig = jsc.hadoopConfiguration();
+			hadoopConfig.setLong(FileInputFormat.SPLIT_MINSIZE, ONE_MiB * config.getPartitionSize());
+			hadoopConfig.setLong(FileInputFormat.SPLIT_MAXSIZE, ONE_MiB * config.getPartitionSize());
+			hadoopConfig.set("mapreduce.fileoutputcommitter.algorithm.version", "2");
+			hadoopConfig.setInt(DFSConfigKeys.DFS_REPLICATION_KEY, 1);
 
-			data = new Data(outputPath, outputPath + "_tmp", memoryAvailable, config.getSplitMemoryConstant(), config.getK());
+			data = new Data(config, outputPath, outputPath + "_tmp", determineAvailableMemory());
 			phases = new LinkedList<>();
 
 			phases.add(new PreProcess(config, inputPath));
@@ -230,7 +269,6 @@ public class SparkEC {
 			logger.fatal("Message: " + e.getLocalizedMessage());
 			exit(-1);
 		}
-
 	}
 
 	/**
@@ -241,12 +279,6 @@ public class SparkEC {
 			TimeMonitor timeMonitor = new TimeMonitor();
 			timeMonitor.startMeasuring(SparkEC.GLOBAL_MEASURE_NAME);
 
-			logger.info("Starting SparkEC "+VERSION);
-			logger.info(String.format("Input path: %s", this.inputPath));
-			logger.info(String.format("Output path: %s", this.outputPath));
-			if (this.configPath != null) {
-				logger.info(String.format("Config path: %s", this.configPath));
-			}
 			logger.info("CONFIG:");
 			config.printConfig();
 
@@ -256,10 +288,10 @@ public class SparkEC {
 			}
 
 			for (Phase p : phases) {
-				logger.info("Computing phase: " + p.getPhaseName());
+				logger.info("Computing phase: "+ p.getPhaseName());
 				timeMonitor.startMeasuring(p.getPhaseName());
 				p.runPhase(data);
-				logger.info("Phase succesfully computed");
+				logger.info("Phase "+ p.getPhaseName()+" succesfully computed");
 				timeMonitor.finishMeasuring(p.getPhaseName());
 			}
 
@@ -301,10 +333,9 @@ public class SparkEC {
 			logger.info(
 					String.format("Output data: %.4fs", timeMonitor.getMeasurement(SparkEC.OUTPUT_MEASURE_NAME)));
 			logger.info(
-					String.format("Elapsed execution time: %.4fs", timeMonitor.getMeasurement(SparkEC.GLOBAL_MEASURE_NAME)));
-
+					String.format("Execution time: %.4fs", timeMonitor.getMeasurement(SparkEC.GLOBAL_MEASURE_NAME)));
 		} catch (Exception e) {
-			logger.fatal("Message: " + e.getMessage());
+			logger.fatal("Exception: " + e.getMessage());
 			exit(-1);
 		}
 	}
