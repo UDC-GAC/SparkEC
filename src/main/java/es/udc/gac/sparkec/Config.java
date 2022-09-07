@@ -19,6 +19,7 @@ import org.apache.spark.api.java.JavaSparkContext;
  * Container for the configuration being used by SparkEC.
  */
 public class Config {
+
 	private static final Logger logger = LogManager.getLogger();
 
 	// FRAMEWORK
@@ -37,6 +38,11 @@ public class Config {
 	 */
 	private final FileSystem fs;
 
+	/**
+	 * Spark log level.
+	 */
+	private String sparkLogLevel = "WARN";
+
 	// GLOBAL
 	/**
 	 * The k being used for this execution.
@@ -44,9 +50,24 @@ public class Config {
 	private final Integer k = 24;
 
 	/**
+	 * The average sequence length (hint).
+	 */
+	private final Integer seqLen = 0;
+
+	/**
+	 * Number of input sequences (hint).
+	 */
+	private final Long numSeq = 0L;
+
+	/**
 	 * The C constant parameter used for the memory estimation of the split-based system.
 	 */
 	private final Float splitMemoryConstant = 5.25f;
+
+	/**
+	 * The partition size in MiB
+	 */
+	private final Integer partitionSize = 4;
 
 	// PREPROCESS
 	/**
@@ -265,12 +286,32 @@ public class Config {
 		return jsc;
 	}
 
+	public String getSparkLogLevel() {
+		return sparkLogLevel;
+	}
+
 	/**
 	 * Gets the K being used by this execution.
 	 * @return The k being used by this execution
 	 */
 	public int getK() {
 		return k;
+	}
+
+	public int getSeqLen() {
+		return seqLen;
+	}
+
+	public long getNumSeq() {
+		return numSeq;
+	}
+
+	/**
+	 * Gets the partition size being used by this execution.
+	 * @return The partition size being used by this execution
+	 */
+	public int getPartitionSize() {
+		return partitionSize;
 	}
 
 	/**
@@ -287,7 +328,7 @@ public class Config {
 	 * @return The input format being used by this execution
 	 */
 	public String getInputType() {
-		return this.inputType;
+		return inputType;
 	}
 
 	/**
@@ -472,6 +513,8 @@ public class Config {
 							f.set(this, Boolean.parseBoolean(v));
 						} else if (f.getType() == Integer.class) {
 							f.set(this, Integer.parseInt(v));
+						} else if (f.getType() == Long.class) {
+							f.set(this, Long.parseLong(v));
 						}
 					}
 				}
@@ -482,6 +525,5 @@ public class Config {
 			logger.fatal("Error parsing config file");
 			System.exit(-1);
 		}
-
 	}
 }

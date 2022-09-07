@@ -1,8 +1,15 @@
-#EXAMPLE FILE WITH DEFAULT CONFIGURATIONS FOR SPARKEC
-
 #GLOBAL
 k = 24
+seqLen = 0
+#0 to autodetermine seqLen
+numSeq = 0
+#0 to autodetermine numSeq
 splitMemoryConstant = 5.25
+partitionSize = 4
+#Partition size interpreted in MiB
+
+#Spark
+sparkLogLevel = WARN
 
 #PREPROCESS
 inputType = FastQ
@@ -26,18 +33,8 @@ stackMax = -1
 stackMin = 5
 #-1 to disable
 
-#Use value bigger than 0 to override number of splits
-
 #POSTPROCESS
 mergeIgnore = false
-
-#OUTPUT TEMPORAL STAGES
-outputPreprocess = false
-outputPinchCorrect = false
-outputLargeKmerFilter = false
-outputSpreadCorrect = false
-outputUniqueKmerFilter = false
-
 
 #ENABLE STAGES
 enablePinchCorrect = true
@@ -45,4 +42,9 @@ enableLargeKmerFilter = true
 enableSpreadCorrect = true
 enableUniqueKmerFilter = true
 
-
+#OUTPUT TEMPORARY STAGE DATA
+outputPreprocess = true
+outputPinchCorrect = false
+outputLargeKmerFilter = false
+outputSpreadCorrect = false
+outputUniqueKmerFilter = false
