@@ -79,7 +79,6 @@ public class PinchCorrect implements Phase {
 		logger.info(String.format("\t\t%s skip_chars", task2.getSkipChar()));
 		logger.info(String.format("\t\t%s fix_reads", task2.getFixReads()));
 		logger.info(String.format("\t\t%s total_decissions", task2.getTotales()));
-
 	}
 
 	public PinchCorrect(Config config) {

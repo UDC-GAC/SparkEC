@@ -60,7 +60,7 @@ public class Convert implements Serializable {
 	 * @return The nodes string RDD
 	 */
 	public JavaRDD<String> run(JavaPairRDD<Long, Node> in, JavaPairRDD<Long, String> mappingJavaPairRDD) {
-
+		
 		/**
 		 * First, we filter out the unique reads.
 		 */
@@ -82,7 +82,6 @@ public class Convert implements Serializable {
 		JavaPairRDD<String, Node> nodesMapped;
 		nodesMapped = nodesFiltered.join(mappingJavaPairRDD).mapToPair(e -> new Tuple2<>(e._2._2, e._2._1));
 		
-
 		/**
 		 * Finally, we output them in the required format.
 		 */
@@ -92,5 +91,4 @@ public class Convert implements Serializable {
 
 		return result;
 	}
-
 }

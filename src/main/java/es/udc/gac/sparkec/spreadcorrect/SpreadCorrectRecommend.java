@@ -34,59 +34,59 @@ public class SpreadCorrectRecommend implements Serializable {
 	 * Maximum quality value to make a replace recommendation
 	 */
 	private static final short QSUM_REPLACE = 60;
-	
+
 	/**
 	 * Minimum quality value to make a protect recommendation
 	 */
 	private static final short QSUM_PROTECT = 90;
-	
+
 	/**
 	 * Maximum ratio between loser and winner bases to make a replace recommendation.
 	 */
 	private static final float QRATIO_LOSER = 0.25f;
-	
+
 	/**
 	 * Minimum number of good QVs to identify a base as a winner base. 
 	 */
 	private static final short QV_GOOD_CNT = 3;
-	
+
 	/**
 	 * Minimum quality value of a winner base.
 	 */
 	private static final short QSUM_WINNER = 40;
-	
+
 	/**
 	 * Whether recommendations under the kmer itself should be emmited.
 	 */
 	private static final boolean SKIP_UNDER = true;
-	
+
 	/**
 	 * Minimum number of bases of an arm to start emmiting recommendations for it.
 	 */
 	private static final short BASE_MIN = 1;
-	
+
 	/**
 	 * Multiplier applied to the number of base splits, in order to get the final number of splits.
 	 * This multiplier allows to apply more splits in this phase, since it requires more memory for
 	 * each kmer.
 	 */
-	private static final int SPLITS_MULTIPLIER = 4;
+	private static final int SPLIT_MULTIPLIER = 4;
 
 	/**
 	 * The k used by this execution.
 	 */
 	private final int k;
-	
+
 	/**
 	 * The arm size.
 	 */
 	private final int arm;
-	
+
 	/**
 	 * The height.
 	 */
 	private final int height;
-	
+
 	/**
 	 * The arm scheme to use.
 	 */
@@ -96,7 +96,7 @@ public class SpreadCorrectRecommend implements Serializable {
 	 * The maximum number of reads to make recommendations.
 	 */
 	private final int stackMax;
-	
+
 	/**
 	 * The minimum number of reads to make recommendations.
 	 */
@@ -106,7 +106,7 @@ public class SpreadCorrectRecommend implements Serializable {
 	 * Different accumulator.
 	 */
 	private final LongAccumulator differents;
-	
+
 	/**
 	 * Equals accumulator.
 	 */
@@ -116,7 +116,7 @@ public class SpreadCorrectRecommend implements Serializable {
 	 * Confirms accumulator.
 	 */
 	private final LongAccumulator confirms;
-	
+
 	/**
 	 * FixChars accumulator.
 	 */
@@ -572,7 +572,7 @@ public class SpreadCorrectRecommend implements Serializable {
 		JavaPairRDD<IDNASequence, SpreadCorrectKmerReadData> kmers;
 		kmers = in.flatMapToPair(
 				node -> generateKmers(node, k, arm, scheme, height, splitIndex, splitCount, splitPrime, splitStrategy)
-						.iterator());
+				.iterator());
 
 		JavaPairRDD<IDNASequence, Iterable<SpreadCorrectKmerReadData>> kmersGrouped;
 		kmersGrouped = kmers.groupByKey(new HashPartitioner(in.getNumPartitions()));
@@ -597,8 +597,8 @@ public class SpreadCorrectRecommend implements Serializable {
 	public JavaPairRDD<Long, Iterable<Recommendation>> run(JavaPairRDD<Long, Node> in,
 			IPhaseSplitStrategy splitStrategy) {
 
-		int splitCount = splitStrategy.getSplits(SPLITS_MULTIPLIER);
-		
+		int splitCount = splitStrategy.getSplits(SPLIT_MULTIPLIER);
+
 		logger.info("Computing SpreadCorrectRecommend using " + splitCount + " splits");
 
 		int splitPrime = splitStrategy.computeSplitPrime(splitCount, in.getNumPartitions());
@@ -627,6 +627,7 @@ public class SpreadCorrectRecommend implements Serializable {
 				}
 				return new Tuple2<>(e._1, joinedData);
 			});
+			
 		}
 
 		return output;
