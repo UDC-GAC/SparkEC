@@ -4,6 +4,11 @@ SparkEC is a parallel tool that allows to correct DNA sequencing errors on NGS d
 
 This project is based on the [CloudEC](https://github.com/CSCLabTW/CloudEC) tool. The underlying Multiple Sequence Alignment (MSA) algorithms provided by CloudEC keep being the same in SparkEC, so their correction accuracy is ensured, but the code architecture has been completely refactored and the Apache Hadoop framework replaced by Spark. Other optimizations provided by SparkEC include the split-based system using a two-step k-mers distribution, the avoidance of preprocessing of the input datasets and the use of more memory-efficient data structures.
 
+### Citation
+
+If you use **SparkEC** in your research, please cite our work using the following reference:
+
+> Roberto R. Expósito, Marco Martínez-Sánchez, Juan Touriño. [SparkEC: speeding up alignment-based DNA error correction tools](https://doi.org/10.1186/s12859-022-05013-1). BMC Bioinformatics 23(1): 464:1-464:17 (2022).
 
 ## Quick Start Guide
 
